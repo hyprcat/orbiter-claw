@@ -1,0 +1,634 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Orbiter Claw">
+  <div id="app" class="flex h-screen">
+    <!-- Sidebar -->
+    <aside
+      id="sidebar"
+      class="
+        flex flex-col w-72 border-r border-(--color-border) bg-(--color-bg-secondary)
+        max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:-translate-x-full
+        transition-transform duration-200
+      "
+    >
+      <!-- Sidebar header -->
+      <div class="flex items-center justify-between p-4 border-b border-(--color-border)">
+        <h1 class="text-lg font-semibold font-(family-name:--font-heading) tracking-tight">Orbiter Claw</h1>
+        <button
+          id="new-session-btn"
+          class="p-1.5 rounded-md hover:bg-(--color-bg-tertiary) text-(--color-text-secondary)"
+          title="New chat"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        </button>
+      </div>
+
+      <!-- Session list -->
+      <nav id="session-list" class="flex-1 overflow-y-auto p-2 space-y-0.5">
+        <!-- Sessions injected by JS -->
+      </nav>
+
+      <!-- Sidebar footer: theme toggle -->
+      <div class="p-3 border-t border-(--color-border)">
+        <button
+          id="theme-toggle"
+          class="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-(--color-text-secondary) hover:bg-(--color-bg-tertiary) transition-colors"
+        >
+          <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block dark:hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span class="dark:hidden">Dark mode</span>
+          <span class="hidden dark:inline">Light mode</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Sidebar backdrop (mobile) -->
+    <div
+      id="sidebar-backdrop"
+      class="fixed inset-0 bg-black/40 z-30 hidden max-md:block"
+      style="display:none;"
+    ></div>
+
+    <!-- Main chat area -->
+    <main class="flex-1 flex flex-col min-w-0">
+      <!-- Top bar -->
+      <header class="flex items-center gap-3 px-4 py-3 border-b border-(--color-border) bg-(--color-bg)">
+        <button
+          id="sidebar-toggle"
+          class="md:hidden p-1.5 rounded-md hover:bg-(--color-bg-secondary) text-(--color-text-secondary)"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <h2 id="chat-title" class="text-sm font-medium text-(--color-text-secondary) truncate">New conversation</h2>
+        <div class="flex-1"></div>
+        <div id="connection-status" class="flex items-center gap-1.5 text-xs text-(--color-text-tertiary)">
+          <span class="w-2 h-2 rounded-full bg-(--color-danger)" id="status-dot"></span>
+          <span id="status-text">Disconnected</span>
+        </div>
+      </header>
+
+      <!-- Messages -->
+      <div id="messages" class="flex-1 overflow-y-auto px-4 py-6">
+        <div id="messages-inner" class="max-w-3xl mx-auto space-y-4">
+          <!-- Welcome state -->
+          <div id="welcome" class="flex flex-col items-center justify-center h-full text-center py-20">
+            <div class="text-4xl mb-4 opacity-60">&#128032;</div>
+            <h2 class="text-xl font-semibold font-(family-name:--font-heading) mb-2">Orbiter Claw</h2>
+            <p class="text-(--color-text-tertiary) text-sm max-w-md">Your local-first AI assistant. Type a message below to start a conversation.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div class="border-t border-(--color-border) bg-(--color-bg) px-4 py-3">
+        <div class="max-w-3xl mx-auto flex gap-2 items-end">
+          <textarea
+            id="message-input"
+            class="
+              flex-1 resize-none rounded-xl border border-(--color-border) bg-(--color-bg-secondary)
+              px-4 py-3 text-sm leading-relaxed
+              placeholder:text-(--color-text-tertiary)
+              focus:outline-none focus:ring-2 focus:ring-(--color-accent)/40 focus:border-(--color-accent)
+              transition-colors
+              min-h-[44px] max-h-[200px]
+            "
+            placeholder="Send a message... (Shift+Enter for new line)"
+            rows="1"
+          ></textarea>
+          <button
+            id="send-btn"
+            class="
+              shrink-0 p-3 rounded-xl bg-(--color-accent) text-white
+              hover:bg-(--color-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed
+              transition-colors
+            "
+            disabled
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</Layout>
+
+<script>
+  import { marked } from "marked";
+  import hljs from "highlight.js/lib/core";
+  import javascript from "highlight.js/lib/languages/javascript";
+  import typescript from "highlight.js/lib/languages/typescript";
+  import python from "highlight.js/lib/languages/python";
+  import bash from "highlight.js/lib/languages/bash";
+  import json from "highlight.js/lib/languages/json";
+  import css from "highlight.js/lib/languages/css";
+  import xml from "highlight.js/lib/languages/xml";
+  import sql from "highlight.js/lib/languages/sql";
+  import rust from "highlight.js/lib/languages/rust";
+  import go from "highlight.js/lib/languages/go";
+
+  hljs.registerLanguage("javascript", javascript);
+  hljs.registerLanguage("js", javascript);
+  hljs.registerLanguage("typescript", typescript);
+  hljs.registerLanguage("ts", typescript);
+  hljs.registerLanguage("python", python);
+  hljs.registerLanguage("py", python);
+  hljs.registerLanguage("bash", bash);
+  hljs.registerLanguage("sh", bash);
+  hljs.registerLanguage("shell", bash);
+  hljs.registerLanguage("json", json);
+  hljs.registerLanguage("css", css);
+  hljs.registerLanguage("html", xml);
+  hljs.registerLanguage("xml", xml);
+  hljs.registerLanguage("sql", sql);
+  hljs.registerLanguage("rust", rust);
+  hljs.registerLanguage("go", go);
+
+  // Configure marked with highlight.js
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+  });
+
+  const renderer = new marked.Renderer();
+  renderer.code = function ({ text, lang }: { text: string; lang?: string; escaped?: boolean }) {
+    const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
+    const label = lang || "code";
+    let highlighted: string;
+    try {
+      highlighted = hljs.highlight(text, { language }).value;
+    } catch {
+      highlighted = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    return (
+      `<div class="code-header"><span>${label}</span><button class="copy-btn text-xs px-2 py-0.5 rounded hover:text-white transition-colors" data-code="${text.replace(/"/g, "&quot;")}">Copy</button></div>` +
+      `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`
+    );
+  };
+  marked.use({ renderer });
+
+  // ── State ────────────────────────────────────────
+  const API = "http://localhost:18789/api/v1";
+  const WS_URL = "ws://localhost:18789/ws";
+
+  interface Session {
+    id: string;
+    title: string;
+    channel: string;
+    created_at: string;
+    updated_at: string;
+    message_count: number;
+  }
+
+  interface Message {
+    id: string;
+    session_id: string;
+    role: string;
+    content: string;
+    created_at: string;
+    metadata: Record<string, unknown> | null;
+  }
+
+  let ws: WebSocket | null = null;
+  let sessions: Session[] = [];
+  let activeSessionId: string | null = null;
+  let isStreaming = false;
+  let streamContent = "";
+
+  // ── DOM refs ─────────────────────────────────────
+  const $messages = document.getElementById("messages-inner")!;
+  const $welcome = document.getElementById("welcome")!;
+  const $input = document.getElementById("message-input") as HTMLTextAreaElement;
+  const $sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
+  const $sessionList = document.getElementById("session-list")!;
+  const $chatTitle = document.getElementById("chat-title")!;
+  const $statusDot = document.getElementById("status-dot")!;
+  const $statusText = document.getElementById("status-text")!;
+  const $themeToggle = document.getElementById("theme-toggle")!;
+  const $sidebar = document.getElementById("sidebar")!;
+  const $sidebarToggle = document.getElementById("sidebar-toggle")!;
+  const $sidebarBackdrop = document.getElementById("sidebar-backdrop")!;
+  const $newSessionBtn = document.getElementById("new-session-btn")!;
+
+  // ── Theme ────────────────────────────────────────
+  $themeToggle.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  });
+
+  // ── Sidebar toggle (mobile) ─────────────────────
+  function openSidebar() {
+    $sidebar.classList.remove("max-md:-translate-x-full");
+    $sidebarBackdrop.style.display = "";
+    $sidebarBackdrop.classList.remove("hidden");
+  }
+  function closeSidebar() {
+    $sidebar.classList.add("max-md:-translate-x-full");
+    $sidebarBackdrop.style.display = "none";
+  }
+  $sidebarToggle.addEventListener("click", openSidebar);
+  $sidebarBackdrop.addEventListener("click", closeSidebar);
+
+  // ── WebSocket ────────────────────────────────────
+  function connectWs() {
+    ws = new WebSocket(WS_URL);
+
+    ws.addEventListener("open", () => {
+      $statusDot.classList.remove("bg-(--color-danger)");
+      $statusDot.classList.add("bg-green-500");
+      $statusText.textContent = "Connected";
+    });
+
+    ws.addEventListener("close", () => {
+      $statusDot.classList.remove("bg-green-500");
+      $statusDot.classList.add("bg-(--color-danger)");
+      $statusText.textContent = "Disconnected";
+      // Reconnect after 2s
+      setTimeout(connectWs, 2000);
+    });
+
+    ws.addEventListener("message", (event) => {
+      const envelope = JSON.parse(event.data);
+      handleWsMessage(envelope);
+    });
+  }
+
+  function handleWsMessage(envelope: {
+    channel: string;
+    type: string;
+    payload: Record<string, unknown>;
+    timestamp: number;
+  }) {
+    // Welcome ACK
+    if (envelope.type === "ack" && envelope.payload.client_id) {
+      return;
+    }
+
+    // Streaming tokens
+    if (envelope.channel === "chat" && envelope.type === "token") {
+      const text = (envelope.payload.text ?? envelope.payload.content ?? "") as string;
+      appendStreamToken(text);
+      return;
+    }
+
+    // Tool result
+    if (envelope.channel === "chat" && envelope.type === "tool_result") {
+      const text = (envelope.payload.result ?? "") as string;
+      appendStreamToken(`\n\`\`\`\n${text}\n\`\`\`\n`);
+      return;
+    }
+
+    // Stream done
+    if (envelope.channel === "chat" && envelope.type === "message" && envelope.payload.done) {
+      finishStream();
+      return;
+    }
+
+    // Full message response
+    if (envelope.channel === "chat" && envelope.type === "message" && envelope.payload.content) {
+      const content = envelope.payload.content as string;
+      if (isStreaming) {
+        finishStream();
+      }
+      appendMessage("assistant", content);
+      return;
+    }
+  }
+
+  // ── Streaming ────────────────────────────────────
+  function appendStreamToken(text: string) {
+    if (!isStreaming) {
+      isStreaming = true;
+      streamContent = "";
+      $welcome.style.display = "none";
+      const el = document.createElement("div");
+      el.id = "streaming-message";
+      el.className = "flex gap-3";
+      el.innerHTML = `
+        <div class="shrink-0 w-8 h-8 rounded-full bg-(--color-accent)/20 text-(--color-accent) flex items-center justify-center text-sm font-semibold font-(family-name:--font-heading)">C</div>
+        <div class="message-content flex-1 min-w-0 pt-1 text-sm"><span class="typing-cursor"></span></div>
+      `;
+      $messages.appendChild(el);
+      scrollToBottom();
+    }
+    streamContent += text;
+    const streamEl = document.querySelector("#streaming-message .message-content");
+    if (streamEl) {
+      streamEl.innerHTML = marked.parse(streamContent) as string;
+      streamEl.innerHTML += '<span class="typing-cursor"></span>';
+      addCopyListeners(streamEl as HTMLElement);
+    }
+    scrollToBottom();
+  }
+
+  function finishStream() {
+    if (!isStreaming) return;
+    isStreaming = false;
+    const streamEl = document.querySelector("#streaming-message .message-content");
+    if (streamEl) {
+      streamEl.innerHTML = marked.parse(streamContent) as string;
+      addCopyListeners(streamEl as HTMLElement);
+      const cursor = streamEl.querySelector(".typing-cursor");
+      cursor?.remove();
+    }
+    const el = document.getElementById("streaming-message");
+    if (el) el.removeAttribute("id");
+
+    // Save assistant message to session
+    if (activeSessionId && streamContent) {
+      saveMessage(activeSessionId, "assistant", streamContent);
+    }
+    streamContent = "";
+    $sendBtn.disabled = false;
+    $input.disabled = false;
+    $input.focus();
+  }
+
+  // ── Messages ─────────────────────────────────────
+  function appendMessage(role: string, content: string) {
+    $welcome.style.display = "none";
+    const el = document.createElement("div");
+    el.className = "flex gap-3";
+
+    if (role === "user") {
+      el.innerHTML = `
+        <div class="flex-1"></div>
+        <div class="max-w-[85%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm bg-(--color-user-bubble) text-(--color-user-text)">${escapeHtml(content)}</div>
+      `;
+    } else {
+      const rendered = marked.parse(content) as string;
+      el.innerHTML = `
+        <div class="shrink-0 w-8 h-8 rounded-full bg-(--color-accent)/20 text-(--color-accent) flex items-center justify-center text-sm font-semibold font-(family-name:--font-heading)">C</div>
+        <div class="message-content flex-1 min-w-0 pt-1 text-sm">${rendered}</div>
+      `;
+      addCopyListeners(el);
+    }
+
+    $messages.appendChild(el);
+    scrollToBottom();
+  }
+
+  function addCopyListeners(root: HTMLElement) {
+    root.querySelectorAll(".copy-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const code = (btn as HTMLElement).dataset.code ?? "";
+        navigator.clipboard.writeText(code).then(() => {
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => { btn.textContent = original; }, 1500);
+        });
+      });
+    });
+  }
+
+  function scrollToBottom() {
+    const container = document.getElementById("messages")!;
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function escapeHtml(s: string): string {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/\n/g, "<br>");
+  }
+
+  // ── API helpers ──────────────────────────────────
+  async function fetchSessions() {
+    try {
+      const res = await fetch(`${API}/sessions`);
+      const data = await res.json();
+      sessions = (data.sessions ?? []) as Session[];
+      renderSessionList();
+    } catch {
+      // API unavailable — show empty list
+      sessions = [];
+      renderSessionList();
+    }
+  }
+
+  async function createSession(): Promise<Session | null> {
+    try {
+      const res = await fetch(`${API}/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: "web" }),
+      });
+      return (await res.json()) as Session;
+    } catch {
+      return null;
+    }
+  }
+
+  async function deleteSession(id: string) {
+    try {
+      await fetch(`${API}/sessions/${id}`, { method: "DELETE" });
+    } catch {
+      // ignore
+    }
+    if (activeSessionId === id) {
+      activeSessionId = null;
+      clearMessages();
+      $chatTitle.textContent = "New conversation";
+    }
+    await fetchSessions();
+  }
+
+  async function loadMessages(sessionId: string) {
+    try {
+      const res = await fetch(`${API}/sessions/${sessionId}/messages`);
+      const data = await res.json();
+      const msgs = (data.messages ?? []) as Message[];
+      clearMessages();
+      for (const msg of msgs) {
+        appendMessage(msg.role, msg.content);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function saveMessage(sessionId: string, role: string, content: string) {
+    try {
+      await fetch(`${API}/sessions/${sessionId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, content }),
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  async function sendCompletion(message: string) {
+    try {
+      const res = await fetch(`${API}/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          session_id: activeSessionId,
+        }),
+      });
+      const data = await res.json();
+      if (data.response) {
+        appendMessage("assistant", data.response as string);
+        if (activeSessionId) {
+          await saveMessage(activeSessionId, "assistant", data.response as string);
+        }
+      }
+    } catch {
+      appendMessage("assistant", "Sorry, I could not reach the backend. Is orbiter-claw running on port 18789?");
+    }
+    $sendBtn.disabled = false;
+    $input.disabled = false;
+    $input.focus();
+  }
+
+  function clearMessages() {
+    $messages.innerHTML = "";
+    $messages.appendChild($welcome);
+    $welcome.style.display = "";
+  }
+
+  // ── Session list rendering ───────────────────────
+  function renderSessionList() {
+    $sessionList.innerHTML = "";
+    // Sort by updated_at desc
+    const sorted = [...sessions].sort(
+      (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    );
+    for (const s of sorted) {
+      const el = document.createElement("div");
+      const isActive = s.id === activeSessionId;
+      el.className = `group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors ${
+        isActive
+          ? "bg-(--color-bg-tertiary) text-(--color-text)"
+          : "text-(--color-text-secondary) hover:bg-(--color-bg-tertiary)/50"
+      }`;
+      el.innerHTML = `
+        <span class="flex-1 truncate">${escapeHtml(s.title || "Untitled")}</span>
+        <button class="delete-session opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-(--color-danger) transition-opacity" data-id="${s.id}" title="Delete">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      `;
+
+      // Click to open session
+      el.addEventListener("click", (e) => {
+        if ((e.target as HTMLElement).closest(".delete-session")) return;
+        selectSession(s);
+        closeSidebar();
+      });
+
+      // Delete button
+      el.querySelector(".delete-session")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteSession(s.id);
+      });
+
+      $sessionList.appendChild(el);
+    }
+  }
+
+  async function selectSession(s: Session) {
+    activeSessionId = s.id;
+    $chatTitle.textContent = s.title || "Untitled";
+    renderSessionList();
+    await loadMessages(s.id);
+  }
+
+  // ── Send message ─────────────────────────────────
+  async function sendMessage() {
+    const text = $input.value.trim();
+    if (!text) return;
+
+    $input.value = "";
+    autoResize();
+    $sendBtn.disabled = true;
+    $input.disabled = true;
+
+    // Create session if needed
+    if (!activeSessionId) {
+      const session = await createSession();
+      if (session) {
+        activeSessionId = session.id;
+        sessions.unshift(session);
+        renderSessionList();
+      }
+    }
+
+    appendMessage("user", text);
+
+    // Save user message
+    if (activeSessionId) {
+      await saveMessage(activeSessionId, "user", text);
+    }
+
+    // Try WebSocket first, fall back to REST
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          channel: "chat",
+          type: "message",
+          payload: { content: text, session_id: activeSessionId },
+          timestamp: Date.now() / 1000,
+        })
+      );
+      // If no streaming response within 5s, fall back to REST
+      const fallbackTimer = setTimeout(() => {
+        if (!isStreaming) {
+          sendCompletion(text);
+        }
+      }, 5000);
+
+      // Clear fallback if streaming starts
+      const checkStream = setInterval(() => {
+        if (isStreaming) {
+          clearTimeout(fallbackTimer);
+          clearInterval(checkStream);
+        }
+      }, 100);
+
+      // Clear interval after fallback fires
+      setTimeout(() => clearInterval(checkStream), 6000);
+    } else {
+      await sendCompletion(text);
+    }
+
+    // Refresh session list (title may have been auto-generated)
+    setTimeout(fetchSessions, 1000);
+  }
+
+  // ── Input handling ───────────────────────────────
+  function autoResize() {
+    $input.style.height = "auto";
+    $input.style.height = Math.min($input.scrollHeight, 200) + "px";
+  }
+
+  $input.addEventListener("input", () => {
+    autoResize();
+    $sendBtn.disabled = !$input.value.trim();
+  });
+
+  $input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if ($input.value.trim()) sendMessage();
+    }
+  });
+
+  $sendBtn.addEventListener("click", sendMessage);
+
+  // New session button
+  $newSessionBtn.addEventListener("click", async () => {
+    activeSessionId = null;
+    clearMessages();
+    $chatTitle.textContent = "New conversation";
+    renderSessionList();
+    closeSidebar();
+    $input.focus();
+  });
+
+  // ── Init ─────────────────────────────────────────
+  connectWs();
+  fetchSessions();
+  $input.focus();
+</script>
